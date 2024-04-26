@@ -1,0 +1,60 @@
+private void CameraRotation()
+{
+    // Check for touch input
+    foreach (UnityEngine.Touch touch in UnityEngine.Input.touches)
+    {
+        switch (touch.phase)
+        {
+            case UnityEngine.TouchPhase.Began:
+                // Check if touch is on the right half of the screen for rotating camera
+                if (touch.position.x >= Screen.width / 2)
+                {
+                    if (!rotatingCamera)
+                    {
+                        rotatingCamera = true;
+                        activeTouchId = touch.fingerId;
+                        lastTouchPosition = touch.position;
+                    }
+                }
+                break;
+            case UnityEngine.TouchPhase.Moved:
+                // Check if this touch is the active one for camera rotation
+                if (rotatingCamera && touch.fingerId == activeTouchId)
+                {
+                    Vector2 delta = touch.position - lastTouchPosition;
+                    currentX += delta.x * sensitivity * Time.deltaTime;
+                    currentY -= delta.y * sensitivity * Time.deltaTime;
+                    // Wrap around rotation angles
+                    currentX = Mathf.Repeat(currentX, 360f);
+                    currentY = Mathf.Clamp(currentY, minYAngle, maxYAngle); // Clamp vertical rotation
+                    lastTouchPosition = touch.position;
+                }
+                break;
+            case UnityEngine.TouchPhase.Ended:
+                // Check if the ended touch was the active one for camera rotation
+                if (touch.fingerId == activeTouchId)
+                {
+                    rotatingCamera = false;
+                    activeTouchId = -1;
+                }
+                break;
+        }
+    }
+
+    // Check for mouse input
+    if (!rotatingCamera && UnityEngine.Input.GetMouseButton(0))
+    {
+        float mouseX = UnityEngine.Input.GetAxis("Mouse X");
+        float mouseY = UnityEngine.Input.GetAxis("Mouse Y");
+
+        currentX += mouseX * sensitivity * Time.deltaTime;
+        currentY -= mouseY * sensitivity * Time.deltaTime;
+
+        currentX = Mathf.Repeat(currentX, 360f);
+        currentY = Mathf.Clamp(currentY, minYAngle, maxYAngle);
+    }
+
+    // Apply the calculated rotation to the camera
+    Quaternion rotation = Quaternion.Euler(currentY, currentX, 0.0f);
+    CinemachineCameraTarget.transform.rotation = rotation;
+}
